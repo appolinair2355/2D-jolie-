@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: telegram-prediction-bot
+    env: python
+    buildCommand: "pip install -r deployer_v2024_render_requirements.txt"
+    startCommand: "python deployer_v2024_complete_main.py"
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: API_ID
+        sync: false
+      - key: API_HASH
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_ID
+        sync: false
+      - key: PORT
+        fromGroup: web
+    healthCheckPath: "/health"

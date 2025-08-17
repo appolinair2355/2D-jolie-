@@ -307,8 +307,8 @@ class CardPredictor:
             for pred_num in list(self.prediction_status.keys()):
                 if (self.prediction_status[pred_num] == '⌛' and 
                     game_number > pred_num + 3):
-                    self.prediction_status[pred_num] = '❌❌'
-                    self.status_log.append((pred_num, '❌❌'))
+                    self.prediction_status[pred_num] = '❌'
+                    self.status_log.append((pred_num, '❌'))
                     print(f"❌ Prédiction #{pred_num} marquée échec - jeu #{game_number} dépasse prédit+3")
                     return False, pred_num
 
