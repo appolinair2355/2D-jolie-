@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: telegram-card-bot-deployer233332
+    env: python
+    buildCommand: "pip install -r deployer233332_render_requirements.txt"
+    startCommand: "python deployer233332_render_main.py"
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: API_ID
+        sync: false
+      - key: API_HASH
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_ID
+        sync: false
+      - key: PORT
+        fromGroup: web
+      - key: RENDER_DEPLOYMENT
+        value: "true"
+    healthCheckPath: "/health"
