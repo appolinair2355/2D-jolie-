@@ -31,9 +31,19 @@ logger = logging.getLogger(__name__)
 # Import des modules locaux
 try:
     from deployer233332_render_predictor import CardPredictor
-    from deployer233332_yaml_manager import YAMLDataManager
+    try:
+        from deployer233332_yaml_manager import YAMLDataManager
+    except ImportError:
+        # Fallback si yaml_manager n'est pas trouvé
+        logger.warning("⚠️ yaml_manager non trouvé, utilisation du système simplifié")
+        class YAMLDataManager:
+            def __init__(self):
+                self.data = {}
+            def get_config(self, key): return None
+            def set_config(self, key, value): pass
+            def save_prediction(self, data): pass
 except ImportError as e:
-    logger.error(f"❌ Erreur import: {e}")
+    logger.error(f"❌ Erreur import critique: {e}")
     sys.exit(1)
 
 class TelegramBot:
