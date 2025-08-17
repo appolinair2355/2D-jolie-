@@ -93,8 +93,8 @@ En cas de problème:
 
 Toutes les fonctionnalités avancées du bot sont incluses:
 - ✅ Détection automatique des canaux avec invitations privées
-- ✅ Prédictions automatiques anticipées (déclenchées sur 7, 8)  
-- ✅ Prédictions pour les prochains rounds de jeu
+- ✅ Prédictions automatiques anticipées (déclenchées sur 5, 7, 8)
+- ✅ Prédictions pour les prochains jeux se terminant par 0
 - ✅ Vérification des résultats avec statuts détaillés (✅0️⃣, ✅1️⃣, ✅2️⃣, ⭕❌)
 - ✅ Rapports automatiques au format personnalisé toutes les 20 mises à jour
 - ✅ Commandes administratives complètes
@@ -103,11 +103,12 @@ Toutes les fonctionnalités avancées du bot sont incluses:
 
 ## 📋 Logique de Prédiction
 
-**Déclenchement** : Jeux avec numéros 7 ou 8
-**Cible** : Prochains rounds de jeu
+**Déclenchement** : Jeux se terminant par 5, 7, ou 8
+**Cible** : Prochains jeux se terminant par 0
 
 **Exemples** :
-- Jeu #1447 détecté → Prédiction pour #1450
+- Jeu #1445 détecté → Prédiction pour #1450
+- Jeu #1447 détecté → Prédiction pour #1450  
 - Jeu #1448 détecté → Prédiction pour #1450
 
 **Format des rapports** :

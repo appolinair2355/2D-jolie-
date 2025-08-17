@@ -50,20 +50,9 @@ confirmation_pending = {}
 prediction_interval = 5  # Intervalle en minutes avant de chercher "A" (défaut: 5 min)
 
 def load_config():
-    """Load configuration with priority: JSON > Database"""
+    """Load configuration from database"""
     global detected_stat_channel, detected_display_channel, prediction_interval
     try:
-        # Toujours essayer JSON en premier (source de vérité)
-        if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-                detected_stat_channel = config.get('stat_channel')
-                detected_display_channel = config.get('display_channel')
-                prediction_interval = config.get('prediction_interval', 5)
-                print(f"✅ Configuration chargée depuis JSON: Stats={detected_stat_channel}, Display={detected_display_channel}, Intervalle={prediction_interval}min")
-                return
-        
-        # Fallback sur base de données si JSON n'existe pas
         if db:
             detected_stat_channel = db.get_config('stat_channel')
             detected_display_channel = db.get_config('display_channel')
@@ -76,13 +65,18 @@ def load_config():
                 prediction_interval = int(interval_config)
             print(f"✅ Configuration chargée depuis la DB: Stats={detected_stat_channel}, Display={detected_display_channel}, Intervalle={prediction_interval}min")
         else:
-            print("ℹ️ Aucune configuration trouvée, nouvelle configuration")
+            # Fallback vers l'ancien système JSON si DB non disponible
+            if os.path.exists(CONFIG_FILE):
+                with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                    detected_stat_channel = config.get('stat_channel')
+                    detected_display_channel = config.get('display_channel')
+                    prediction_interval = config.get('prediction_interval', 5)
+                    print(f"✅ Configuration chargée depuis JSON: Stats={detected_stat_channel}, Display={detected_display_channel}, Intervalle={prediction_interval}min")
+            else:
+                print("ℹ️ Aucune configuration trouvée, nouvelle configuration")
     except Exception as e:
         print(f"⚠️ Erreur chargement configuration: {e}")
-        # Valeurs par défaut en cas d'erreur
-        detected_stat_channel = None
-        detected_display_channel = None 
-        prediction_interval = 5
 
 def save_config():
     """Save configuration to database and JSON backup"""
@@ -403,26 +397,21 @@ async def show_trigger_numbers(event):
         trigger_nums = list(predictor.trigger_numbers)
         trigger_nums.sort()
 
-        # Recharger la configuration pour éviter les valeurs obsolètes
-        load_config()
-        
         msg = f"""📊 **Statut des Déclencheurs Automatiques**
 
-🎯 **Numéros déclencheurs**: {', '.join(map(str, trigger_nums))}
+🎯 **Numéros de fin activant les prédictions**: {', '.join(map(str, trigger_nums))}
 
 📋 **Fonctionnement**:
-• Le bot surveille les jeux avec numéros {', '.join(map(str, trigger_nums))}
-• Il prédit automatiquement le prochain jeu
-• Format: "🔵 {{numéro}} 🔵2D: statut :⏳"
+• Le bot surveille les jeux se terminant par {', '.join(map(str, trigger_nums))}
+• Il prédit automatiquement le prochain jeu se terminant par 0
+• Format: "🔵 {{numéro}} 📌 D🔵 statut :''⌛''"
 
 📈 **Statistiques actuelles**:
 • Prédictions actives: {len([s for s in predictor.prediction_status.values() if s == '⌛'])}
-• Canal stats configuré: {'✅' if detected_stat_channel else '❌'} ({detected_stat_channel or 'Aucun'})
-• Canal affichage configuré: {'✅' if detected_display_channel else '❌'} ({detected_display_channel or 'Aucun'})
+• Canal stats configuré: {'✅' if detected_stat_channel else '❌'}
+• Canal affichage configuré: {'✅' if detected_display_channel else '❌'}
 
-🔧 **Configuration actuelle**:
-• Stats: {detected_stat_channel if detected_stat_channel else 'Non configuré'}
-• Display: {detected_display_channel if detected_display_channel else 'Non configuré'}"""
+💡 **Canal détecté**: {detected_stat_channel if detected_stat_channel else 'Aucun'}"""
 
         await event.respond(msg)
         print(f"Statut des déclencheurs envoyé à l'admin")
@@ -686,22 +675,22 @@ Configuration sauvegardée automatiquement.""")
 
 @client.on(events.NewMessage(pattern='/deploy'))
 async def generate_deploy_package(event):
-    """Génère le package de déploiement deployer233332 pour Render.com (admin uniquement)"""
+    """Génère le package de déploiement 2026 pour Render.com (admin uniquement)"""
     try:
         if event.sender_id != ADMIN_ID:
             return
 
-        await event.respond("🚀 **Génération Package deployer233332.zip...**")
+        await event.respond("🚀 **Génération Package deployment_2026.zip...**")
         
         try:
             # Créer le package ZIP avec nom correct
-            package_name = 'deployer233332.zip'
+            package_name = 'deployment_2026.zip'
             
             with zipfile.ZipFile(package_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                # Fichiers principaux deployer233332
+                # Fichiers principaux
                 files_to_include = [
-                    'main.py', 'deployer233332_render_main.py', 'deployer233332_render_predictor.py', 
-                    'deployer233332_render_requirements.txt', 'deployer233332_render.yaml', 'deployer233332_yaml_manager.py',
+                    'main.py', 'render_main.py', 'render_predictor.py', 
+                    'render_requirements.txt', 'render.yaml', 'yaml_manager.py',
                     'predictor.py', 'scheduler.py', 'README_RENDER.md', 'DEPLOYMENT_GUIDE.md'
                 ]
                 
@@ -729,14 +718,13 @@ pyyaml==6.0.1"""
                 runtime_content = "python-3.11.4"
                 zipf.writestr('runtime.txt', runtime_content)
                 
-                # Documentation deployer233332
-                readme_deployer233332 = f"""# Package Déploiement deployer233332 - Migration YAML Complète
+                # Documentation 2026
+                readme_2026 = f"""# Package Déploiement 2026 - Migration YAML Complète
 
-## Nouvelles Fonctionnalités deployer233332:
+## Nouvelles Fonctionnalités 2026:
 ✅ **Migration PostgreSQL → YAML**: Plus de base de données externe requise
 ✅ **Stockage fichiers locaux**: Dossier data/ avec fichiers YAML structurés  
 ✅ **Performance améliorée**: Élimination des connexions base de données
-✅ **Format corrigé**: Messages "🔵XXX 🔵2D: statut :⏳" (plus d'affichage couleurs)
 ✅ **Commande /intervalle**: Configuration délai 1-60 minutes (actuel: {prediction_interval}min)
 ✅ **Système As optimisé**: Déclenchement uniquement dans premier groupe
 
@@ -749,8 +737,7 @@ pyyaml==6.0.1"""
 ## Variables Render.com:
 - Configurez toutes les variables de .env.example
 - Port: 10000
-- Start Command: python deployer233332_render_main.py
-- Build Command: pip install -r deployer233332_render_requirements.txt
+- Start Command: python render_main.py
 - PLUS BESOIN de DATABASE_URL PostgreSQL
 
 ## Commandes Disponibles:
@@ -758,30 +745,29 @@ pyyaml==6.0.1"""
 /status - État complet avec intervalle
 /deploy - Générer ce package
 
-🚀 Déploiement 100% autonome avec format prédiction corrigé!"""
-                zipf.writestr('README_deployer233332.md', readme_deployer233332)
+🚀 Déploiement 100% autonome sans dépendances externes!"""
+                zipf.writestr('README_2026.md', readme_2026)
             
             file_size = os.path.getsize(package_name) / 1024
             
             # Envoyer le message de confirmation
-            await event.respond(f"""✅ **PACKAGE DEPLOYER233332 CRÉÉ AVEC SUCCÈS!**
+            await event.respond(f"""✅ **PACKAGE 2026 CRÉÉ AVEC SUCCÈS!**
 
-📦 **Fichier**: deployer233332.zip ({file_size:.1f} KB)
+📦 **Fichier**: deployment_2026.zip ({file_size:.1f} KB)
 🔄 **Migration YAML**: Suppression complète PostgreSQL
 ⚡ **Performance**: Plus de dépendances base de données
-🎯 **Format corrigé**: Messages "🔵XXX 🔵2D: statut :⏳"
 🆕 **Commande /intervalle** incluse (actuel: {prediction_interval}min)
 🔧 **Port 10000** configuré pour Render.com
-📚 **Documentation deployer233332** complète""")
+📚 **Documentation 2026** complète""")
             
             # Envoyer le fichier ZIP en pièce jointe
             await client.send_file(
                 event.chat_id,
                 package_name,
-                caption="📦 **Package Déploiement deployer233332** - Architecture YAML pure avec format corrigé, prêt pour Render.com"
+                caption="📦 **Package Déploiement 2026** - Architecture YAML pure, prêt pour Render.com"
             )
             
-            print(f"✅ Package deployer233332.zip créé: {file_size:.1f} KB")
+            print(f"✅ Package deployment_2026.zip créé: {file_size:.1f} KB")
             
         except Exception as e:
             await event.respond(f"❌ Erreur création: {str(e)}")
@@ -827,7 +813,7 @@ async def handle_messages(event):
         if predicted:
             print(f"🎯 Message édité finalisé, traitement de la prédiction #{predicted_game}")
             # Message de prédiction selon le nouveau format
-            prediction_text = f"🔵{predicted_game} 🔵2D: statut :⏳"
+            prediction_text = f"🔵{predicted_game}— JOKER 2D| ⏳"
 
             sent_messages = await broadcast(prediction_text)
 
@@ -842,7 +828,7 @@ async def handle_messages(event):
             predicted, predicted_game, suit = predictor.should_predict(message_text)
             if predicted:
                 # Message de prédiction manuelle selon le nouveau format demandé
-                prediction_text = f"🔵{predicted_game} 🔵2D: statut :⏳"
+                prediction_text = f"🔵{predicted_game}— JOKER 2D| ⏳"
 
                 sent_messages = await broadcast(prediction_text)
 
@@ -863,7 +849,7 @@ async def handle_messages(event):
                 print(f"✅ Message de prédiction #{number} mis à jour avec statut: {statut}")
             else:
                 print(f"⚠️ Impossible de mettre à jour le message #{number}, envoi d'un nouveau message")
-                status_text = f"🔵{number} 🔵2D: statut :{statut}"
+                status_text = f"🔵{number}— JOKER 2D| {statut}"
                 await broadcast(status_text)
         
         # Check for expired predictions on every valid result message
@@ -877,7 +863,7 @@ async def handle_messages(event):
                     print(f"✅ Message de prédiction expirée #{expired_num} mis à jour avec ❌❌")
                 else:
                     print(f"⚠️ Impossible de mettre à jour le message expiré #{expired_num}")
-                    status_text = f"🔵{expired_num} 🔵2D: statut :❌❌"
+                    status_text = f"🔵{expired_num}— JOKER 2D| ❌❌"
                     await broadcast(status_text)
 
         # Vérification des prédictions automatiques du scheduler
@@ -912,7 +898,9 @@ async def handle_messages(event):
                         print(f"📝 Prédiction automatique {numero_str} vérifiée: {status}")
                         print(f"🔄 Nouvelle prédiction générée pour maintenir la continuité")
 
-        # Bilan automatique supprimé sur demande utilisateur
+        # Generate periodic report every 20 predictions
+        if len(predictor.status_log) > 0 and len(predictor.status_log) % 20 == 0:
+            await generate_report()
 
     except Exception as e:
         print(f"Erreur dans handle_messages: {e}")
@@ -941,7 +929,7 @@ async def edit_prediction_message(game_number: int, new_status: str):
         if message_info:
             chat_id = message_info['chat_id']
             message_id = message_info['message_id']
-            new_text = f"🔵{game_number} 🔵2D: statut :{new_status}"
+            new_text = f"🔵{game_number}— JOKER 2D| {new_status}"
 
             await client.edit_message(chat_id, message_id, new_text)
             print(f"Message de prédiction #{game_number} mis à jour avec statut: {new_status}")
