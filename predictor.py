@@ -13,7 +13,7 @@ class CardPredictor:
         self.prediction_messages = {}  # Stockage des IDs de messages de prédiction
         self.pending_edit_messages = {}  # Messages en attente d'édition {game_number: message_content}
         # Système de déclenchement basé sur les As (A) dans le premier groupe uniquement
-        self.trigger_numbers = {7, 8}  # Numéros de fin qui déclenchent les prédictions
+        self.trigger_numbers = {7, 8}  # Numéros déclencheurs pour les prédictions
         
     def reset(self):
         """Reset all prediction data"""
@@ -278,7 +278,9 @@ class CardPredictor:
                 print(f"❌ Résultat invalide: pas exactement 2+2 cartes, ignoré pour vérification")
                 return None, None
             
-            for offset in range(3):  # Check 0, 1, 2 offsets
+            # Nouvelle logique: Vérifier d'abord le numéro exact, puis jusqu'à +3
+            # Vérifier les offsets de 0 à 3
+            for offset in range(4):  # offsets 0, 1, 2, 3
                 predicted_number = game_number - offset
                 print(f"Vérification si le jeu #{game_number} correspond à la prédiction #{predicted_number} (offset {offset})")
                 
@@ -286,22 +288,32 @@ class CardPredictor:
                     self.prediction_status[predicted_number] == '⌛'):
                     print(f"Prédiction en attente trouvée: #{predicted_number}")
                     
-                    # Success with offset indicator - résultat déjà validé comme 2+2
+                    # Détermine le statut selon l'offset
                     if offset == 0:
-                        statut = '✅0️⃣'  # Perfect timing
+                        statut = '✅0️⃣'  # Jeu exact
                     elif offset == 1:
-                        statut = '✅1️⃣'  # 1 game late
-                    else:
-                        statut = '✅2️⃣'  # 2 games late
+                        statut = '✅1️⃣'  # 1 jeu après
+                    elif offset == 2:
+                        statut = '✅2️⃣'  # 2 jeux après
+                    else:  # offset == 3
+                        statut = '✅3️⃣'  # 3 jeux après
                         
                     self.prediction_status[predicted_number] = statut
                     self.status_log.append((predicted_number, statut))
                     print(f"✅ Prédiction réussie: #{predicted_number} validée par le jeu #{game_number} (offset {offset})")
                     return True, predicted_number
+            
+            # Si aucune prédiction trouvée dans les offsets 0-3, marquer les anciennes comme échec
+            for pred_num in list(self.prediction_status.keys()):
+                if (self.prediction_status[pred_num] == '⌛' and 
+                    game_number > pred_num + 3):
+                    self.prediction_status[pred_num] = '❌❌'
+                    self.status_log.append((pred_num, '❌❌'))
+                    print(f"❌ Prédiction #{pred_num} marquée échec - jeu #{game_number} dépasse prédit+3")
+                    return False, pred_num
 
-            # Si aucune prédiction trouvée dans les 3 offsets, ne pas marquer comme expirées ici
-            # Les prédictions expirées seront traitées séparément
-            print(f"Aucune prédiction correspondante trouvée pour le jeu #{game_number}")
+            # Si aucune prédiction trouvée
+            print(f"Aucune prédiction correspondante trouvée pour le jeu #{game_number} dans les offsets 0-3")
             print(f"Prédictions actuelles en attente: {[k for k, v in self.prediction_status.items() if v == '⌛']}")
             return None, None
 
